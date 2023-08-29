@@ -27,7 +27,7 @@ or by skipping some of the steps if you are already familiar with them.
 Resources 
 #########
 
-For more information on the use cases covered by this Demo Guide, please see the following resources including DevCentral article(s), YouTube video(s):
+For more information on the use cases covered by this Demo Guide, please see the following resources including DevCentral article(s) and YouTube video(s):
 
 - DevCentral Articles: 
 
