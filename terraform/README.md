@@ -2,7 +2,7 @@
 
 ## Deploy infrastructure
 
-Before running the Terraform script, please ensure that you have [installed the Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) and have s[signed in to your Azure Account](https://learn.microsoft.com/en-us/cli/azure/authenticate-azure-cli). It is required that you have the **Owner** role and create service principal subscription with **Contributor** role for it. You also must [accept the subscription agreement](https://docs.cloud.f5.com/docs/how-to/site-management/create-azure-site#accept-subscription-agreement) to deploy the XC Azure VNET Site.
+Before running the Terraform script, please make sure that you have [installed the Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) and have [signed in to your Azure Account](https://learn.microsoft.com/en-us/cli/azure/authenticate-azure-cli). It is required that you have the **Owner** role and create service principal subscription with **Contributor** role for it. You also must [accept the subscription agreement](https://docs.cloud.f5.com/docs/how-to/site-management/create-azure-site#accept-subscription-agreement) to deploy the XC Azure VNET Site.
 
 Open the **./azure-site/var.tf** file and fill in the variables with your Azure Tenant ID and Subscription ID:
 
@@ -23,11 +23,11 @@ Find **xc_api_url** variable and fill it with your F5 xC tenant name.
         default = "https://your_tenant.console.ves.volterra.io/api"
     }
 
-Sign in to the F5 Distributed Cloud Console and open **Administration** tab.
+Sign in to the F5 Distributed Cloud Console and open the **Administration** tab.
 
 ![](../assets/azure/administration.png)
 
-Open **Credentials** section and click **Add Credentials**.
+Open the **Credentials** section and click **Add Credentials**.
 
 ![](../assets/azure/create_credentials.png)
 
@@ -136,7 +136,7 @@ Run **apply** command to deploy the app
 
 Variable Name                  | Description                                                     | Default Value          
 -------------------------------|-----------------------------------------------------------------|------------------------
-environment                    | Environment name. Usually match with XC namspace name.          | "ha-services-ce"                   
+environment                    | Environment name. Usually match with XC namespace name.         | "ha-services-ce"                   
 xc_api_p12_file                | API credential p12 file path.                                   | "../api-creds.p12"                  
 xc_api_url                     | Tenant API url file path.                                       | "https://**your_tenant_name**.console.ves.volterra.io/api"                   
 kubeconfig_path                | Generated vk8s kubeconfig file path.                            | "../kubeconfig.conf"                   
@@ -149,12 +149,12 @@ azure_xc_machine_type          | Azure VM Type                                  
 
 Variable Name       | Description                                                     | Default Value          
 --------------------|-----------------------------------------------------------------|------------------------
-environment         | Environment name. Usually match with XC namspace name.          | "ha-services-ce"                   
+environment         | Environment name. Usually match with XC namespace name.         | "ha-services-ce"                   
 xc_api_p12_file     | API credential p12 file path.                                   | "../api-creds.p12"                  
 xc_api_url          | Tenant API url file path.                                       | "https://**your_tenant_name**.console.ves.volterra.io/api"                   
 kubeconfig_path     | vk8s kubeconfig file path.                                      | "../kubeconfig.conf"                   
 helm_path           | Helm charts path.                                               | "../../helm"
-cluster_domain      | Cluster domain in format **{site_name}.{tenant_id}**.tenant.local. Where **site_name** is the Edge site name. Can be generated from [the guide](https://github.com/f5devcentral/xchacedemoguide#step-2-deploy-ha-postgresql-to-ce) or took from the terraform's output of the previous step.    |  **your_site_name.your_tenant_full_name**.tenant.local
+cluster_domain      | Cluster domain in format **{site_name}.{tenant_id}**.tenant.local. Where **site_name** is the Edge site name. Can be generated from [the guide](https://github.com/f5devcentral/xchacedemoguide#step-2-deploy-ha-postgresql-to-ce) or taken from the terraform's output of the previous step.   |  **your_site_name.your_tenant_full_name**.tenant.local
 registry_username   | Docker Registry Username                                        | ""
 registry_password   | Docker Registry Password                                        | ""
 registry_email      | Docker Registry Email                                           | ""
@@ -162,6 +162,6 @@ virtual_site_name   | Virtual Site Name                                         
 
 ## Delete environment
 
-Run the **terraform destroy** command in the **./application** forlder and then in the **./azure-site folder**
+Run the **terraform destroy** command in the **./application** folder and then in the **./azure-site folder**
 
     terraform destroy
