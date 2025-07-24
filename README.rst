@@ -64,7 +64,7 @@ F5 Distributed Cloud Services allow to create edge sites with worker nodes on a 
  
 A single virtual site can also be deployed across multiple CEs, thus creating a multi-cloud infrastructure. It is also possible to place several virtual sites into one CE, each with their own policy settings for more granular security and app service management. It's also feasible for several virtual sites to share both the same and different CE sites as underlying resources. 
  
-During the creation of sites & virtual sites, labels such as site name, site type and others can be used to organize site resources. If you want to use site name to organize an edge site as a virtual site, then <code>ves.io/siteName</code> label can be used. 
+During the creation of sites & virtual sites, labels such as site name, site type and others can be used to organize site resources. If you want to use site name to organize an edge site as a virtual site, then *ves.io/siteName* label can be used. 
  
 The diagram shows how vK8s clusters can be deployed across multiple CEs with virtual sites to control distributed cloud infrastructure. Note that this architecture shows four virtual clusters assigned to CE sites in different ways.
 
@@ -118,7 +118,7 @@ After we configured 3 nodes, let’s proceed and apply the configuration.
   
 .. figure:: assets/nodeapply.png 
 
-Next, we will paste the Public SSH key to access the site. Note that if you don't have a key, you can generate one using the <code>ssh-keygen</code> command and then display it with the command <code>cat ~/.ssh/id_rsa.pub</code>.
+Next, we will paste the Public SSH key to access the site. Note that if you don't have a key, you can generate one using the *ssh-keygen* command and then display it with the command *cat ~/.ssh/id_rsa.pub*.
 
 .. figure:: assets/publicsshkey.png 
  
@@ -135,7 +135,7 @@ First, the **Status** field for the Azure VNET object changes to **Apply Plannin
 Attaching label 
 ***************
 
-When the site is created, the label should be assigned. Use the <code>ves.io/siteName</code> label to name the site. Follow the instructions below to configure the site. 
+When the site is created, the label should be assigned. Use the *ves.io/siteName* label to name the site. Follow the instructions below to configure the site. 
  
 First, open the menu of the created Azure VNET site and navigate to **Manage Configuration**. 
  
@@ -160,7 +160,7 @@ Click **Save Azure VNET Site** to apply the label configuration.
 Creating Virtual Site
 ********************* 
  
-As soon as an edge site is created and the label is assigned, create a virtual site, as described below. The virtual site should be of the CE type and the label must be <code>ves.io/siteName</code> with operation <code>==</code> and the name of the Azure VNET site.  
+As soon as an edge site is created and the label is assigned, create a virtual site, as described below. The virtual site should be of the CE type and the label must be *ves.io/siteName* with operation **==** and the name of the Azure VNET site.  
  
 Navigate to the **Distributed Apps** service and select **Virtual Sites** in the **Manage** section. After that click **Add Virtual Site** to load the creation form. 
  
@@ -171,11 +171,11 @@ In the **Site Type** section, select the **CE** site type from the drop-down men
  
 .. figure:: assets/vs.png
  
-Now we will configure the label expression. First, select <code>ves.io/siteName</code> as a key. 
+Now we will configure the label expression. First, select *ves.io/siteName* as a key. 
   
 .. figure:: assets/vskey.png 
  
-Then select the <code>==</code> operator. 
+Then select the **==** operator. 
   
 .. figure:: assets/vsoperator.png 
  
@@ -188,7 +188,7 @@ Note the virtual site name, as it will be required later.
 Creating vK8s cluster 
 *********************
  
-At this point, our edge site for the HA Database deployment is ready. Now create the vK8s cluster. Select both virtual sites (one on CE and one on RE) by using the corresponding label: the one created earlier and the <code>ves-io-shared/ves-io-all-res</code>. The <code>all-res</code> one will be used for the deployment of workloads on all RE’s. 
+At this point, our edge site for the HA Database deployment is ready. Now create the vK8s cluster. Select both virtual sites (one on CE and one on RE) by using the corresponding label: the one created earlier and the *ves-io-shared/ves-io-all-res*. The *all-res* one will be used for the deployment of workloads on all RE’s. 
  
 Navigate to the Virtual K8s and click the **Add Virtual K8s** button to create a vK8s object. 
  
@@ -202,7 +202,7 @@ Then select the virtual site we created from the drop-down menu. Click **Add Ite
   
 .. figure:: assets/vk8svirtualsite1.png 
  
-Select the <code>ves-io-shared/ves-io-all-res</code>. The <code>all-res</code> one will be used for the deployment of workloads on all REs. It includes all regional edge sites across F5 ADN.  
+Select the *ves-io-shared/ves-io-all-res*. The *all-res* one will be used for the deployment of workloads on all REs. It includes all regional edge sites across F5 ADN.  
 Complete creating the vK8s object by clicking **Add Virtual K8s**. Wait for the vK8s object to get created and displayed. 
   
 .. figure:: assets/vk8ssecondsite.png 
@@ -222,7 +222,7 @@ There are several ways of deploying the HA PostgreSQL. The architecture used in 
 Downloading Key
 ***************
  
-To operate with kubectl utility or, in our case, Helm, the <code>kubeconfig</code> key is required. The Console provides an easy way to get the <code>kubeconfig</code> file, control its expiration date, etc. So, let's download the <code>kubeconfig</code> for the created vK8s cluster. 
+To operate with kubectl utility or, in our case, Helm, the *kubeconfig* key is required. The Console provides an easy way to get the *kubeconfig* file, control its expiration date, etc. So, let's download the *kubeconfig* for the created vK8s cluster. 
  
 Open the menu of the created virtual K8s and click **Kubeconfig**.  
   
@@ -259,7 +259,7 @@ Before we can proceed to the next step, we will need to update the creds in the 
 Making Secrets
 ************** 
  
-vK8s need to download docker images from the storage. This might be *docker.io* or any other docker registry your company uses. The docker secrets need to be created from command line using the <code>kubectl create secret</code> command. Use the name of the *kubeconfig* file that you downloaded in the previous step. 
+vK8s need to download docker images from the storage. This might be *docker.io* or any other docker registry your company uses. The docker secrets need to be created from command line using the *kubectl create secret* command. Use the name of the *kubeconfig* file that you downloaded in the previous step. 
  
 NOTE. Please, note that the created secret will not be seen from Registries UI as this section is used to create Deployments from UI. But Helm script will be used in this demo. 
  
@@ -286,11 +286,11 @@ Let's proceed to specify the above-mentioned values in the *values.yaml*:
   
 .. figure:: assets/copyvs.png 
 
-2. An important key in values for the database is *clusterDomain*. Let's proceed to construct the value this way: <code>{sitename}.{tenant_id}.tenant.local</code>. Note that <code>site_id</code> here is *Edge site id*, not the virtual one. We can get this information from site settings. First, navigate to the **Multi-Cloud Network Connect** service, proceed to the **Site Management** section, and select the **Azure VNET Sites** option. Open the **JSON** settings of the site in Azure VNET Sites list. <code>Tenant id</code> and <code>site name</code> will be shown as tenant and name fields of the object. 
+2. An important key in values for the database is *clusterDomain*. Let's proceed to construct the value this way: *{sitename}.{tenant_id}.tenant.local*. Note that *site_id* here is *Edge site id*, not the virtual one. We can get this information from site settings. First, navigate to the **Multi-Cloud Network Connect** service, proceed to the **Site Management** section, and select the **Azure VNET Sites** option. Open the **JSON** settings of the site in Azure VNET Sites list. *Tenant id* and *site name* will be shown as tenant and name fields of the object. 
  
 .. figure:: assets/tenant.png 
 
-3. Next, let’s get the *kubeVersion* key. Open the terminal and run the <code>KUBECONFIG=YOURFILENAME.yaml kubectl version</code> command to get the *kubectl version*. Then copy the value into the *values.yaml*. 
+3. Next, let’s get the *kubeVersion* key. Open the terminal and run the *KUBECONFIG=YOURFILENAME.yaml kubectl version* command to get the *kubectl version*. Then copy the value into the *values.yaml*. 
   
 .. figure:: assets/gitversion.png 
 
@@ -302,14 +302,12 @@ Let's proceed to specify the above-mentioned values in the *values.yaml*:
 Deploying HA PostgreSQL chart to the Distributed Cloud Platform vK8s
 **************************************** 
 
-As values are now setup to run in the Distributed Cloud Platform, deploy the chart to the vK8s cluster using the <code>xc-deploy-bd</code> command in the Visual Studio Code CLI::
+As values are now setup to run in the Distributed Cloud Platform, deploy the chart to the vK8s cluster using the *xc-deploy-bd* command in the Visual Studio Code CLI::
 
    make xc-deploy-bd
   
 Checking deployment 
 *******************
-
-TBD
  
 After we deployed the HA PostgreSQL to vK8s, we can check that pods and services are deployed successfully from distributed virtual Kubernetes dashboard. 
  
@@ -363,17 +361,17 @@ In the Name field, enter a name. In the Origin Servers section click **Add Item*
  
 .. figure:: assets/poolname.png  
  
-From the Select Type of Origin Server menu, select the **K8s Service Name of Origin Server on given Sites** type to specify the origin server with its K8s service name. Then enter the service name of the origin server (including service name we copied earlier and namespace). Select **Virtual Site** option in the Site or Virtual Site menu. And select a virtual site created earlier. After that, pick the **vK8s Networks on the Site network**. Finally, click **Apply**. 
+From the Select Type of Origin Server menu, select the **K8s Service Name of Origin Server on given Sites** type to specify the origin server with its K8s service name. Then enter the service name of the origin server (including service name we copied earlier and namespace). Select **Virtual Site** option in the Site or Virtual Site menu. And select a virtual site created earlier. After that, pick the **vK8s Networks on the Site** network. Finally, click **Apply**. 
  
 .. figure:: assets/originserver.png  
  
-Enter a port number in the Port field. We use **5432** for this guide. And complete creating the origin pool by clicking **Save and Exit**. 
+Enter a port number in the Port field. We use **5432** for this guide. And complete creating the origin pool by clicking **Add Origin Pool**. 
  
 .. figure:: assets/poolport.png  
  
 Creating TCP Load Balancer
 ************************** 
- 
+
 As soon as Origin Pool is ready, the TCP Load Balancer can be created, as described below. This load balancer needs to be accessible only from RE network, or, in other words, to be advertised there, which will be done in the next step. 
  
 Navigate to the **TCP Load Balancers** option of the Load Balancers section. Then click **Add TCP Load Balancer** to open the load balancer creation form. 
@@ -389,7 +387,7 @@ Then move on to the **Origin Pools** section and click **Add Item** to open the 
  
 .. figure:: assets/tcpport.png  
  
-From the Origin Pool drop-down menu, select the origin pool created in the previous step and **Click Apply**. 
+From the Origin Pool drop-down menu, select the origin pool created in the previous step and click **Apply**. 
  
 .. figure:: assets/tcppool.png  
  
@@ -404,7 +402,7 @@ Click **Add Item** to add a site to advertise.
   
 .. figure:: assets/addadvertise.png  
  
-First, select **vK8s Service Network on RE** for Select Where to Advertise field. Then select **Virtual Site Reference** for the reference type, and assign **ves-io-shared/ves-io-all-res** as one. Move on to configure a **TCP listener port** as **5432**. Finally, click **Apply**. 
+First, select **vK8s Service Network on RE** for Select Where to Advertise field. Then select **Virtual Site Reference** for the reference type, and assign **ves-io-shared/ves-io-all-res** as one. Move on to configure a **Listen Port** as **5432**. Finally, click **Apply**. 
   
 .. figure:: assets/advertiseconfig.png  
  
@@ -412,7 +410,7 @@ First, select **vK8s Service Network on RE** for Select Where to Advertise field
   
 .. figure:: assets/applyadvertise.png  
  
-Complete creating the load balancer by clicking **Save and Exit**. 
+Complete creating the load balancer by clicking **Add TCP Load Balancer**. 
  
 .. figure:: assets/saveadvertise.png 
 
@@ -422,7 +420,7 @@ Step 4: Test connection from RE to DB
 Infrastructure to Test the deployed PostgreSQL 
 **********************************************
  
-To test access to the CE deployed Database from RE deployment, we will use an NGINX reverse proxy with a module that gets data from PosgreSQL and this service will be deployed to the Regional Edge. It is not a good idea to use this type of a data pull in production, but it is very useful for test purposes. So, test user will query the RE Deployed NGINX Reverse proxy, which will perform a query to the database. The HTTP Load Balancer and Origin Pool also should be created to access NGINX from RE.  
+To test access to the CE deployed database from RE deployment, we will use an NGINX reverse proxy with a module that gets data from PosgreSQL and this service will be deployed to the Regional Edge. It is not a good idea to use this type of a data pull in production, but it is very useful for test purposes. So, test user will query the RE deployed NGINX Reverse proxy, which will perform a query to the database. The HTTP Load Balancer and Origin Pool should also be created to access NGINX from RE.  
 
 .. figure:: assets/diagram4.png 
 
@@ -463,12 +461,12 @@ To deploy NGINX run the following command in the Visual Studio Code CLI::
    make xc-deploy-nginx
 
  
-Overviewing the NGINX Deployment 
-********************************
+Overviewing NGINX Deployment 
+****************************
  
 The vK8s deployment now has additional RE deployments, which contain the newly-configured NGINX proxy. The RE locations included many Points of Presence (PoPs) worldwide, and when selected, it is possible to have our Reverse Proxy service deployed automatically to each of these sites. 
  
-Let's now take a look at the NGINX Deployment. Go back to the **F5 Distributed Cloud** console and navigate to the **Distributed Apps** service. Proceed to the **Virtual K8s** and click the one we created earlier.
+Let's now take a look at the NGINX Deployment. Go back to the **F5 Distributed Cloud Console** and navigate to the **Distributed Apps** service. Proceed to the **Virtual K8s** and click the one we created earlier.
    
 .. figure:: assets/vk8soverview.png 
  
@@ -483,7 +481,7 @@ Here we will drill into the cluster pods: their nodes, statuses, virtual sites t
  
 Creating HTTP Load Balancer 
 ***************************
- 
+
 To access our NGINX module that pulls the data from PostgreSQL we need an HTTP Load Balancer. This load balancer needs to be advertised on the internet so that it can be accessed from out of the vK8s cluster. Let's move on and create an HTTP Load Balancer. 
  
 Navigate to **Load Balancers** and select the **HTTP Load Balancers** option. Then click the **Add HTTP Load Balancer** button to open the creation form. 
@@ -506,11 +504,11 @@ First, give it a name, then specify the **9080** port and proceed to add **Origi
   
 .. figure:: assets/nginxpool.png
  
-First, from the Select Type of Origin Server menu, select **K8s Service Name of Origin Server on given Sites** to specify the origin server with its K8s service name. Then enter the **nginx-rp.ha-services-ce** service name in the Service Name field where *nginx-rp* is the deployed service name and *ha-services-ce* is the namespace. Next, select the **Virtual Site** option in the Site or Virtual Site menu to select **ves-io-shared/ves-io-all-res** site which includes all regional edge sites across F5 ADN. After that select **vK8s Networks on Site** which means that the origin server is on vK8s network on the site and, finally, click **Apply**. 
+First, from the Select Type of Origin Server menu, select **K8s Service Name of Origin Server on given Sites** to specify the origin server with its K8s service name. Then enter the **nginx-rp.ha-services-ce** service name in the Service Name field where *nginx-rp* is the deployed service name and *ha-services-ce* is the namespace. Next, select the **Virtual Site** option in the Site or Virtual Site menu to choose **ves-io-shared/ves-io-all-res** site which includes all regional edge sites across F5 ADN. After that select **vK8s Networks on Site** which means that the origin server is on vK8s network on the site and, finally, click **Apply**. 
  
 .. figure:: assets/originserversetup.png 
  
-Click **Continue** to move on to apply the origin pool configuration. 
+Click **Add Origin Pool** to move on to apply the origin pool configuration. 
  
 .. figure:: assets/poolcontinue.png 
  
@@ -518,7 +516,7 @@ Click the **Apply** button to apply the origin pool configuration to the HTTP Lo
   
 .. figure:: assets/poolapply.png 
  
-Complete creating the load balancer by clicking **Save and Exit**. 
+Complete creating the load balancer by clicking **Add HTTP Load Balancer**. 
   
 .. figure:: assets/httpsave.png 
  
