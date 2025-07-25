@@ -130,7 +130,7 @@ Note that site upgrades may take up to 10 minutes per site node. Once a site upg
   
 .. figure:: assets/applysite.png 
  
-First, the **Status** field for the Azure VNET object changes to **Apply Planning**. Wait for the apply process to complete and the status to change to **Applied**. 
+First, the **Status** field for the Azure VNET object changes to **Applying**. Wait for the apply process to complete and the status to change to **Applied**. 
 
 Attaching label 
 ***************
