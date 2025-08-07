@@ -1,11 +1,13 @@
-==================================================
+===============================================================================
+F5 Enterprise Networking with High-Availability Config (in Microsoft Azure)
+===============================================================================
 
-.. contents:: Table of Contents
+.. contents:: **Table of Contents**
 
 Objective
 #########
 
-Use this guide to explore **Hybrid Multicloud App Delivery** solution showcasing an example High-Availability (HA) configuration of a workload deployed on virtual Kubernetes (vK8s) running within the F5 Distributed Cloud Platform. Leveraging distributed architecture such as this simplifies deployment and management of workloads across multiple clouds and regions.
+Use this guide to explore an Azure-specific example of High-Availability (HA) Application Delivery using F5 Distributed Cloud Services (XC). This guide walks through sample configuration of **F5 Enterprise Networking** (F5 Distributed Cloud Network Connect) and **F5 Load Balancing** (F5 Distributed Cloud App Connect). Leveraging distributed architecutre such as this simplifies deployment and management of workloads across multiple clouds and regions.
 
 This will help you get familiar with the general pattern of deploying high-availability configurations on Microsoft Azure by using Kubernetes Helm charts in a multi-node F5 Distributed Cloud Customer Edge (CE) "Site", which itself can then be exposed to other services. This is a common use-case for deploying a highly-available backend or a database on Kubernetes, which can then be used in conjunction with Regional Edge (RE) deployments that consume and/or interact with the central CE location. 
 
@@ -57,7 +59,7 @@ The app services that consume database objects could reside close to the end-use
 
 .. figure:: assets/diagram1.png
 
-Step 1: Prepare environment for HA Load 
+Step 1: Prepare the environment for HA Load 
 #######################################
  
 F5 Distributed Cloud Services allow to create edge sites with worker nodes on a wide variety of cloud providers: AWS, Azure, GCP. The pre-requisite is one or more Distributed Cloud CE Sites, and once deployed, you can expose the services created on these edge sites via a Site mesh and any additional Load Balancers. The selection of TCP (L3/L4) or HTTP/S (L7) Load Balancers depends on the requirements for the services to communicate with each other. In our case we’re exposing a database service, which is a fit for a TCP Load Balancer. Should there be a backend service or anything that exposes an HTTP endpoint for other services to connect to, we could have used an HTTP/S LB instead. (Note that a single CE Site may support one or more virtual sites, which is similar to a logical grouping of site resources.)
