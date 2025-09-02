@@ -37,3 +37,10 @@ variable "kubeconfig_path" {
   type    = string
   default = "../kubeconfig.conf"
 }
+
+variable "end_date" {
+  description = "The absolute end date until which the password is valid, formatted as an RFC3339 date string (e.g. 2218-01-01T01:02:03Z). Changing this field forces a new resource to be created."
+  type        = string
+  sensitive   = true
+  default     = null
+}
