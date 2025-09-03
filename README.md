@@ -2,23 +2,48 @@
 
 ## Table of Contents
 
-- [Objective](#objective)
-- [Resources](#resources)
-- [Pre-requisites](#pre-requisites)
-- [Deployment architecture](#deployment-architecture)
-- [Step 1: Prepare the environment for HA Load](#step-1-prepare-the-environment-for-ha-load)
-- [Step 2: Deploy HA PostgreSQL to CE](#step-2-deploy-ha-postgresql-to-ce)
-- [Step 3: Expose CE services to RE deployment](#step-3-expose-ce-services-to-re-deployment)
-- [Step 4: Test connection from RE to DB](#step-4-test-connection-from-re-to-db)
-- [Wrap-Up](#wrap-up)
+- [F5 Enterprise Networking with High-Availability Config (in Microsoft Azure)](#f5-enterprise-networking-with-high-availability-config-in-microsoft-azure)
+  - [Table of Contents](#table-of-contents)
+  - [Objective](#objective)
+  - [Resources](#resources)
+  - [Pre-requisites](#pre-requisites)
+  - [Deployment architecture](#deployment-architecture)
+  - [Step 1: Prepare the environment for HA Load](#step-1-prepare-the-environment-for-ha-load)
+    - [Creating an Azure VNET site](#creating-an-azure-vnet-site)
+    - [Attaching label](#attaching-label)
+    - [Creating Virtual Site](#creating-virtual-site)
+    - [Creating vK8s cluster](#creating-vk8s-cluster)
+  - [Step 2: Deploy HA PostgreSQL to CE](#step-2-deploy-ha-postgresql-to-ce)
+    - [HA PostgreSQL Architecture in vK8s](#ha-postgresql-architecture-in-vk8s)
+    - [Downloading Key](#downloading-key)
+    - [Adding Bitnami Helm Chart repository to Helm](#adding-bitnami-helm-chart-repository-to-helm)
+    - [Updating Credentials in Makefile](#updating-credentials-in-makefile)
+    - [Making Secrets](#making-secrets)
+    - [Updating DB Deployment Chart Values](#updating-db-deployment-chart-values)
+    - [Deploying HA PostgreSQL chart to the Distributed Cloud Platform vK8s](#deploying-ha-postgresql-chart-to-the-distributed-cloud-platform-vk8s)
+    - [Checking deployment](#checking-deployment)
+  - [Step 3: Expose CE services to RE deployment](#step-3-expose-ce-services-to-re-deployment)
+    - [Exposing CE services](#exposing-ce-services)
+    - [Creating origin pool](#creating-origin-pool)
+    - [Creating TCP Load Balancer](#creating-tcp-load-balancer)
+    - [Advertising Load Balancer on RE](#advertising-load-balancer-on-re)
+  - [Step 4: Test connection from RE to DB](#step-4-test-connection-from-re-to-db)
+    - [Infrastructure to Test the deployed PostgreSQL](#infrastructure-to-test-the-deployed-postgresql)
+    - [Build Docker](#build-docker)
+    - [NGINX Reverse Proxy Config to Query PostgreSQL DB](#nginx-reverse-proxy-config-to-query-postgresql-db)
+    - [Deploying NGINX Reverse Proxy](#deploying-nginx-reverse-proxy)
+    - [Overviewing NGINX Deployment](#overviewing-nginx-deployment)
+    - [Creating HTTP Load Balancer](#creating-http-load-balancer)
+    - [Testing: Request data from PostgreSQL DB](#testing-request-data-from-postgresql-db)
+  - [Wrap-Up](#wrap-up)
 
 ## Objective
 
-Use this guide to explore an Azure-specific example of High-Availability (HA) Application Delivery using F5 Distributed Cloud Services (XC). This guide walks through sample configuration of **F5 Enterprise Networking** (F5 Distributed Cloud Network Connect) and **F5 Load Balancing** (F5 Distributed Cloud App Connect). Leveraging distributed architecture such as this simplifies deployment and management of workloads across multiple clouds and regions.
+Use this guide to explore an Azure-specific example of High-Availability (HA) Application Delivery using F5 Distributed Cloud Services (XC). This guide walks through sample configuration of **F5 Enterprise Networking** (F5 Distributed Cloud Network Connect) and **F5 Load Balancing** (F5 Distributed Cloud App Connect). Leveraging distributed architecture such as this simplifies the deployment and management of workloads across multiple clouds and regions.
 
 This will help you get familiar with the general pattern of deploying high-availability configurations on Microsoft Azure by using Kubernetes Helm charts in a multi-node F5 Distributed Cloud Customer Edge (CE) "Site", which itself can then be exposed to other services. This is a common use-case for deploying a highly-available backend or a database on Kubernetes, which can then be used in conjunction with Regional Edge (RE) deployments that consume and/or interact with the central CE location. 
 
-In this guide we will use an example of a PostgreSQL database deployment in a High-Availability (HA) configuration on a CE and expose it to a RE location(s) closer to end-users for lowered latency, improved performance, and data resiliency. 
+In this guide we will use an example of a PostgreSQL database deployment in a High-Availability (HA) configuration on a CE and expose it to RE location(s) closer to end-users for lower latency, improved performance, and data resiliency. 
 
 The guide includes the following key steps: 
 
@@ -27,7 +52,7 @@ The guide includes the following key steps:
 • Exposing CE services to RE deployment; 
 • Testing the connection from RE to DB. 
 
-The resulting architecture will be a PostgreSQL database deployed in a HA config on Kubernetes running on several compute nodes within an Azure VNET, and exposing via TCP Load Balancer to a service in a RE that reads and presents the database contents to the end-users, which is a perfect fit for a CE deployment.  
+The resulting architecture will be a PostgreSQL database deployed in an HA configuration on Kubernetes running on several compute nodes within an Azure VNET, and exposing via TCP Load Balancer to a service in an RE that reads and presents the database contents to the end-users, which is a perfect fit for a CE deployment.  
  
 Each of the steps in this guide addresses a specific part of the whole deployment process and describes it in detail. Therefore, this guide can be completed step-by-step 
 or by skipping some of the steps if you are already familiar with them.  
@@ -65,11 +90,11 @@ The app services that consume database objects could reside close to the end-use
 
 ## Step 1: Prepare the environment for HA Load
  
-F5 Distributed Cloud Services allow to create edge sites with worker nodes on a wide variety of cloud providers: AWS, Azure, GCP. The pre-requisite is one or more Distributed Cloud CE Sites, and once deployed, you can expose the services created on these edge sites via a Site mesh and any additional Load Balancers. The selection of TCP (L3/L4) or HTTP/S (L7) Load Balancers depends on the requirements for the services to communicate with each other. In our case we're exposing a database service, which is a fit for a TCP Load Balancer. Should there be a backend service or anything that exposes an HTTP endpoint for other services to connect to, we could have used an HTTP/S LB instead. (Note that a single CE Site may support one or more virtual sites, which is similar to a logical grouping of site resources.)
+F5 Distributed Cloud Services allow you to create edge sites with worker nodes on a wide variety of cloud providers: AWS, Azure, GCP. The prerequisite is one or more Distributed Cloud CE Sites, and once deployed, you can expose the services created on these edge sites via a Site mesh and any additional Load Balancers. The selection of TCP (L3/L4) or HTTP/S (L7) Load Balancers depends on the requirements for the services to communicate with each other. In our case, we're exposing a database service, which is a fit for a TCP Load Balancer. Should there be a backend service or anything that exposes an HTTP endpoint for other services to connect to, we could have used an HTTP/S LB instead. (Note that a single CE Site may support one or more virtual sites, which is similar to a logical grouping of site resources.)
  
 A single virtual site can also be deployed across multiple CEs, thus creating a multi-cloud infrastructure. It is also possible to place several virtual sites into one CE, each with their own policy settings for more granular security and app service management. It's also feasible for several virtual sites to share both the same and different CE sites as underlying resources. 
  
-During the creation of sites & virtual sites, labels such as site name, site type and others can be used to organize site resources. If you want to use site name to organize an edge site as a virtual site, then *ves.io/siteName* label can be used. 
+During the creation of sites & virtual sites, labels such as site name, site type and others can be used to organize site resources. If you want to use site name to organize an edge site as a virtual site, then the *ves.io/siteName* label can be used. 
  
 The diagram shows how vK8s clusters can be deployed across multiple CEs with virtual sites to control distributed cloud infrastructure. Note that this architecture shows four virtual clusters assigned to CE sites in different ways.
 
@@ -77,7 +102,7 @@ The diagram shows how vK8s clusters can be deployed across multiple CEs with vir
 
 ### Creating an Azure VNET site
  
-Let's start creating the Azure VNET site with worker nodes. Log in the Console and navigate to the **Multi-Cloud Network Connect** service, then to **Site Management** and select **Azure VNET Sites**. Click the **Add Azure VNET Site** button. 
+Let's start by creating the Azure VNET site with worker nodes. Log into the Console and navigate to the **Multi-Cloud Network Connect** service, then to **Site Management** and select **Azure VNET Sites**. Click the **Add Azure VNET Site** button. 
    
 ![Azure VNET](assets/azurevnet.png)
  
@@ -97,7 +122,7 @@ Click **Add Item** to configure the Ingress Gateway (One Interface).
   
 ![Add Node](assets/addnode.png)
  
-Now we will configure the first node: select **1** from the Azure AZ name menu which matches the configured Azure Region. Enter new subnet address **10.0.1.0/24** in IPv4 Subnet. 
+Now we will configure the first node: select **1** from the Azure AZ name menu which matches the configured Azure Region. Enter the new subnet address **10.0.1.0/24** in IPv4 Subnet. 
 Click **Apply** to save the first node settings. 
  
 ![Zone 1](assets/zone1.png)
@@ -106,7 +131,7 @@ Click again the **Add Item** button to configure the second node.
   
 ![Add Node 2](assets/addnode2.png)
  
-Let's now configure the second node: select **2** from the Azure AZ name menu and enter new subnet address **10.0.2.0/24** in IPv4 Subnet. Then click **Apply** to save the node settings. 
+Let's now configure the second node: select **2** from the Azure AZ name menu and enter the new subnet address **10.0.2.0/24** in IPv4 Subnet. Then click **Apply** to save the node settings. 
  
 ![Zone 2](assets/zone2.png)
  
@@ -114,7 +139,7 @@ Click the **Add Item** button one more time to configure the third node.
  
 ![Add Node 3](assets/addnode3.png)
  
-Select **3** from the Azure AZ name menu and enter new subnet address **10.0.3.0/24** in IPv4 Subnet. Then click **Apply** to save the node settings. 
+Select **3** from the Azure AZ name menu and enter the new subnet address **10.0.3.0/24** in IPv4 Subnet. Then click **Apply** to save the node settings. 
  
 ![Zone 3](assets/zone3.png)
  
@@ -130,7 +155,7 @@ Next, we will configure **Desired Worker Nodes** in the advanced configuration. 
   
 ![Advanced](assets/advanced.png)
  
-Note that site upgrades may take up to 10 minutes per site node. Once a site upgrade has been completed, we need to apply the Terraform parameters to site. The **Status** box for the VNET site object displays **Validation Succeeded**. So, click **Apply** in the **Deployment** column. 
+Note that site upgrades may take up to 10 minutes per site node. Once a site upgrade has been completed, we need to apply the Terraform parameters to the site. The **Status** box for the VNET site object displays **Validation Succeeded**. So, click **Apply** in the **Deployment** column. 
   
 ![Apply Site](assets/applysite.png)
  
@@ -138,7 +163,7 @@ First, the **Status** field for the Azure VNET object changes to **Applying**. W
 
 ### Attaching label
 
-When the site is created, the label should be assigned. Use the *ves.io/siteName* label to name the site. Follow the instructions below to configure the site. 
+When the site is created, a label should be assigned. Use the *ves.io/siteName* label to name the site. Follow the instructions below to configure the site. 
  
 First, open the menu of the created Azure VNET site and navigate to **Manage Configuration**. 
  
@@ -169,7 +194,7 @@ Navigate to the **Distributed Apps** service and select **Virtual Sites** in the
 ![Add VS](assets/addvs.png)
  
 In the Metadata section Name field, enter a virtual site name. 
-In the **Site Type** section, select the **CE** site type from the drop-down menu, and then move on to adding label.  
+In the **Site Type** section, select the **CE** site type from the drop-down menu, and then move on to adding a label.  
  
 ![VS](assets/vs.png)
  
@@ -181,7 +206,7 @@ Then select the **==** operator.
   
 ![VS Operator](assets/vsoperator.png)
  
-And finally, type in the name of Azure VNET site we created earlier, assign it as a label value, and complete the process by clicking the **Add Virtual site** button.  
+And finally, type in the name of the Azure VNET site we created earlier, assign it as a label value, and complete the process by clicking the **Add Virtual site** button.  
   
 ![VS Label Value](assets/vslabelvalue.png)
  
@@ -189,7 +214,7 @@ Note the virtual site name, as it will be required later.
 
 ### Creating vK8s cluster
  
-At this point, our edge site for the HA Database deployment is ready. Now create the vK8s cluster. Select both virtual sites (one on CE and one on RE) by using the corresponding label: the one created earlier and the *ves-io-shared/ves-io-all-res*. The *all-res* one will be used for the deployment of workloads on all RE's. 
+At this point, our edge site for the HA Database deployment is ready. Now create the vK8s cluster. Select both virtual sites (one on CE and one on RE) by using the corresponding labels: the one created earlier and the *ves-io-shared/ves-io-all-res*. The *all-res* one will be used for the deployment of workloads on all REs. 
  
 Navigate to the Virtual K8s and click the **Add Virtual K8s** button to create a vK8s object. 
  
@@ -203,7 +228,7 @@ Then select the virtual site we created from the drop-down menu. Click **Add Ite
   
 ![VK8s Virtual Site 1](assets/vk8svirtualsite1.png)
  
-Select the *ves-io-shared/ves-io-all-res*. The *all-res* one will be used for the deployment of workloads on all REs. It includes all regional edge sites across F5 ADN.  
+Select the *ves-io-shared/ves-io-all-res*. The *all-res* one will be used for the deployment of workloads on all REs. It includes all regional edge sites across the F5 ADN.  
 Complete creating the vK8s object by clicking **Add Virtual K8s**. Wait for the vK8s object to get created and displayed. 
   
 ![VK8s Second Site](assets/vk8ssecondsite.png)
@@ -214,13 +239,13 @@ Now that the environment for both RE and CE deployments is ready, we can move on
 
 ### HA PostgreSQL Architecture in vK8s
  
-There are several ways of deploying the HA PostgreSQL. The architecture used in this guide is shown in the picture below. The pgPool deployment will be used to ensure the HA features. 
+There are several ways to deploy the HA PostgreSQL. The architecture used in this guide is shown in the picture below. The pgPool deployment will be used to ensure the HA features. 
   
 ![Diagram 2](assets/diagram2.png)
 
 ### Downloading Key
  
-To operate with kubectl utility or, in our case, Helm, the *kubeconfig* key is required. The Console provides an easy way to get the *kubeconfig* file, control its expiration date, etc. So, let's download the *kubeconfig* for the created vK8s cluster. 
+To operate with the kubectl utility or, in our case, Helm, the *kubeconfig* key is required. The Console provides an easy way to get the *kubeconfig* file, control its expiration date, etc. So, let's download the *kubeconfig* for the created vK8s cluster. 
  
 Open the menu of the created virtual K8s and click **Kubeconfig**.  
   
@@ -257,23 +282,23 @@ Before we can proceed to the next step, we will need to update the creds in the 
 
 ### Making Secrets
  
-vK8s need to download docker images from the storage. This might be *docker.io* or any other docker registry your company uses. The docker secrets need to be created from command line using the *kubectl create secret* command. Use the name of the *kubeconfig* file that you downloaded in the previous step. 
+vK8s needs to download docker images from the storage. This might be *docker.io* or any other docker registry your company uses. The docker secrets need to be created from the command line using the *kubectl create secret* command. Use the name of the *kubeconfig* file that you downloaded in the previous step. 
  
-NOTE: Please note that the created secret will not be seen from Registries UI as this section is used to create Deployments from UI. But Helm script will be used in this demo. 
+NOTE: Please note that the created secret will not be seen from the Registries UI as this section is used to create Deployments from the UI. But the Helm script will be used in this demo. 
 
 ![Make Secret](assets/makesecret.png)
 
 
 ### Updating DB Deployment Chart Values
  
-Bitnami provides ready charts for HA database deployments. The postgresql-ha chart can be used. The chart install requires setup of the corresponding variables so that the HA cluster can run in the Distributed Cloud Platform environment. The main things to change are: 
+Bitnami provides ready charts for HA database deployments. The postgresql-ha chart can be used. The chart installation requires setup of the corresponding variables so that the HA cluster can run in the Distributed Cloud Platform environment. The main things to change are: 
 
 - *ves.io/virtual-sites* to specify the virtual site name where the chart will be deployed. 
 - The CE virtual site we created needs to be specified. 
-- Also, clusterDomain key must be set, so that PostgreSQL services could resolve. 
+- Also, the clusterDomain key must be set, so that PostgreSQL services could resolve. 
 - And finally, the *kubeVersion* key. 
  
-NOTE: It is important to specify memory and CPU resources values for PostgreSQL services unless the Console applies its own minimal values, which are not enough for PostgreSQL successful operation. 
+NOTE: It is important to specify memory and CPU resource values for PostgreSQL services unless the Console applies its own minimal values, which are not enough for PostgreSQL successful operation. 
  
 Let's proceed to specify the above-mentioned values in the *values.yaml*: 
   
@@ -283,7 +308,7 @@ Let's proceed to specify the above-mentioned values in the *values.yaml*:
   
 ![Copy VS](assets/copyvs.png)
 
-2. An important key in values for the database is *clusterDomain*. Let's proceed to construct the value this way: *{sitename}.{tenant_id}.tenant.local*. Note that *site_id* here is *Edge site id*, not the virtual one. We can get this information from site settings. First, navigate to the **Multi-Cloud Network Connect** service, proceed to the **Site Management** section, and select the **Azure VNET Sites** option. Open the **JSON** settings of the site in Azure VNET Sites list. *Tenant id* and *site name* will be shown as tenant and name fields of the object. 
+2. An important key in values for the database is *clusterDomain*. Let's proceed to construct the value this way: *{sitename}.{tenant_id}.tenant.local*. Note that *site_id* here is the *Edge site id*, not the virtual one. We can get this information from site settings. First, navigate to the **Multi-Cloud Network Connect** service, proceed to the **Site Management** section, and select the **Azure VNET Sites** option. Open the **JSON** settings of the site in the Azure VNET Sites list. *Tenant id* and *site name* will be shown as tenant and name fields of the object. 
  
 ![Tenant](assets/tenant.png)
 
@@ -300,7 +325,7 @@ containerSecurityContext:
 
 ### Deploying HA PostgreSQL chart to the Distributed Cloud Platform vK8s
 
-As values are now setup to run in the Distributed Cloud Platform, deploy the chart to the vK8s cluster using the *xc-deploy-bd* command in the Visual Studio Code CLI:
+As the values are now set up to run in the Distributed Cloud Platform, deploy the chart to the vK8s cluster using the *xc-deploy-bd* command in the Visual Studio Code CLI:
 
 ```bash
 make xc-deploy-bd
@@ -308,9 +333,9 @@ make xc-deploy-bd
 
 ### Checking deployment
  
-After we deployed the HA PostgreSQL to vK8s, we can check that pods and services are deployed successfully from distributed virtual Kubernetes dashboard. 
+After we deployed the HA PostgreSQL to vK8s, we can check that pods and services are deployed successfully from the distributed virtual Kubernetes dashboard. 
  
-To do that take the following steps. 
+To do that, take the following steps. 
 On the Virtual K8s page, click the vK8s we created earlier to drill down into its details. 
   
 ![Enter VK8s](assets/entervk8s.png)
@@ -327,23 +352,23 @@ As we can see, the first pod is successfully deployed, up and running.
   
 ![Logs](assets/logs.png)
  
-Go one step back and take the same steps for the second pod to see its status. That's what we will see after selecting the *postgresql* as a container to show the logs from: the second pod is up and running and was properly deployed. 
+Go one step back and take the same steps for the second pod to see its status. That's what we will see after selecting *postgresql* as the container to show the logs from: the second pod is up and running and was properly deployed. 
  
 ![Logs 2](assets/logs2.png)
 
 ## Step 3: Expose CE services to RE deployment
 
-The CE deployment is up and running. Now it is necessary to create a secure channel between RE and CE to communicate. RE will read data from the CE deployed database. To do so, two additional objects need to be created. 
+The CE deployment is up and running. Now it is necessary to create a secure channel between RE and CE to communicate. The RE will read data from the CE deployed database. To do so, two additional objects need to be created. 
 
 ### Exposing CE services
 
-To access HA Database deployed to CE site, we will need to expose this service via a TCP Load Balancer. Since Load Balancers are created on the basis of an Origin Pool, we will start with creating a pool.  
+To access the HA Database deployed to the CE site, we will need to expose this service via a TCP Load Balancer. Since Load Balancers are created on the basis of an Origin Pool, we will start with creating a pool.  
  
 ![Diagram 3](assets/diagram3.png)
 
 ### Creating origin pool
  
-To create an Origin Pool for the vk8s deployed service follow the step below. 
+To create an Origin Pool for the vK8s deployed service, follow the steps below. 
  
 First, copy the name of the service we will create the pool for. Then navigate to **Load Balancer** and proceed to **Origin Pools**. 
   
@@ -357,17 +382,17 @@ In the Name field, enter a name. In the Origin Servers section click **Add Item*
  
 ![Pool Name](assets/poolname.png)
  
-From the Select Type of Origin Server menu, select the **K8s Service Name of Origin Server on given Sites** type to specify the origin server with its K8s service name. Then enter the service name of the origin server (including service name we copied earlier and namespace). Select **Virtual Site** option in the Site or Virtual Site menu. And select a virtual site created earlier. After that, pick the **vK8s Networks on the Site** network. Finally, click **Apply**. 
+From the Select Type of Origin Server menu, select the **K8s Service Name of Origin Server on given Sites** type to specify the origin server with its K8s service name. Then enter the service name of the origin server (including the service name we copied earlier and namespace). Select the **Virtual Site** option in the Site or Virtual Site menu. And select the virtual site created earlier. After that, pick the **vK8s Networks on the Site** network. Finally, click **Apply**. 
  
 ![Origin Server](assets/originserver.png)
  
-Enter a port number in the Port field. We use **5432** for this guide. And complete creating the origin pool by clicking **Add Origin Pool**. 
+Enter a port number in the Port field. We use **5432** for this guide. Complete creating the origin pool by clicking **Add Origin Pool**. 
  
 ![Pool Port](assets/poolport.png)
 
 ### Creating TCP Load Balancer
 
-As soon as Origin Pool is ready, the TCP Load Balancer can be created, as described below. This load balancer needs to be accessible only from RE network, or, in other words, to be advertised there, which will be done in the next step. 
+As soon as the Origin Pool is ready, the TCP Load Balancer can be created, as described below. This load balancer needs to be accessible only from the RE network, or, in other words, to be advertised there, which will be done in the next step. 
  
 Navigate to the **TCP Load Balancers** option of the Load Balancers section. Then click **Add TCP Load Balancer** to open the load balancer creation form. 
  
@@ -377,7 +402,7 @@ In the Metadata section, enter a name for your TCP load balancer. Then click **A
   
 ![TCP Config](assets/tcpconfig.png)
  
-In the Domains field, enter the name of the domain to be used with this load balancer – **re2ce.internal**, and in the Listen Port field, enter a **5432** port. This makes it possible to access the service by TCP Load Balancer domain and port. If the domain is specified as re2ce.internal and port is 5432, the connection to the DB might be performed from the RE using these settings. 
+In the Domains field, enter the name of the domain to be used with this load balancer – **re2ce.internal**, and in the Listen Port field, enter a **5432** port. This makes it possible to access the service by TCP Load Balancer domain and port. If the domain is specified as re2ce.internal and the port is 5432, the connection to the DB might be performed from the RE using these settings. 
 Then move on to the **Origin Pools** section and click **Add Item** to open the configuration form. 
  
 ![TCP Port](assets/tcpport.png)
@@ -396,7 +421,7 @@ Click **Add Item** to add a site to advertise.
   
 ![Add Advertise](assets/addadvertise.png)
  
-First, select **vK8s Service Network on RE** for Select Where to Advertise field. Then select **Virtual Site Reference** for the reference type, and assign **ves-io-shared/ves-io-all-res** as one. Move on to configure a **Listen Port** as **5432**. Finally, click **Apply**. 
+First, select **vK8s Service Network on RE** for the Select Where to Advertise field. Then select **Virtual Site Reference** for the reference type, and assign **ves-io-shared/ves-io-all-res** as one. Move on to configure a **Listen Port** as **5432**. Finally, click **Apply**. 
   
 ![Advertise Config](assets/advertiseconfig.png)
  
@@ -412,21 +437,21 @@ Complete creating the load balancer by clicking **Add TCP Load Balancer**.
 
 ### Infrastructure to Test the deployed PostgreSQL
  
-To test access to the CE deployed database from RE deployment, we will use an NGINX reverse proxy with a module that gets data from PosgreSQL and this service will be deployed to the Regional Edge. It is not a good idea to use this type of a data pull in production, but it is very useful for test purposes. So, test user will query the RE deployed NGINX Reverse proxy, which will perform a query to the database. The HTTP Load Balancer and Origin Pool should also be created to access NGINX from RE.  
+To test access to the CE deployed database from the RE deployment, we will use an NGINX reverse proxy with a module that gets data from PostgreSQL and this service will be deployed to the Regional Edge. It is not a good idea to use this type of data pull in production, but it is very useful for test purposes. So, the test user will query the RE deployed NGINX Reverse proxy, which will perform a query to the database. The HTTP Load Balancer and Origin Pool should also be created to access NGINX from the RE.  
 
 ![Diagram 4](assets/diagram4.png)
 
 ### Build Docker
  
-To query our PostgreSQL data, the data should be first put in the database. The easiest way to initialize a database is to use the *migrate/migrate project*. As a Dockerfile we will use a *dockerfile.migrate.nonroot*. The only customization required is to run the docker in non-root mode.  
+To query our PostgreSQL data, the data should first be put in the database. The easiest way to initialize a database is to use the *migrate/migrate* project. As a Dockerfile we will use *dockerfile.migrate.nonroot*. The only customization required is to run the docker in non-root mode.  
 
 ![Migrate](assets/migrate.png)
  
-Default NGINX build does not have PostgreSQL Module included. Luckily, the OpenResty project allows easy compiling NGINX with the module. Take a look at the *Dockerfile.openrestry*.
+The default NGINX build does not have the PostgreSQL Module included. Luckily, the OpenResty project allows easy compilation of NGINX with the module. Take a look at *Dockerfile.openrestry*.
    
 ![Module](assets/module.png)
  
-The NGINX deployed on RE should run in non-root mode. So we convert the openresty compiled by NGINX into the nonroot one.  
+The NGINX deployed on the RE should run in non-root mode. So we convert the openresty compiled NGINX into the nonroot one.  
   
 ![Non Root](assets/nonroot.png)
  
@@ -436,9 +461,9 @@ And now let's build all this by running the **make docker** command in the Visua
 
 ### NGINX Reverse Proxy Config to Query PostgreSQL DB
  
-NGINX creates a server, listening to port 8080. The default location gets all items from article table and caches them. The following NGINX config sets up the reverse proxy configuration to forward traffic from RE to CE, where "re2ce.internal" is the TCP load balancer we created earlier in [Creating TCP Load Balancer](#creating-tcp-load-balancer).
+NGINX creates a server, listening on port 8080. The default location gets all items from the article table and caches them. The following NGINX config sets up the reverse proxy configuration to forward traffic from RE to CE, where "re2ce.internal" is the TCP load balancer we created earlier in [Creating TCP Load Balancer](#creating-tcp-load-balancer).
 
-It also sets up a server on a port 8080 to present the query data that returns all items from the "articles" table.  
+It also sets up a server on port 8080 to present the query data that returns all items from the "articles" table.  
   
 ![Proxy Config](assets/proxyconfig.png)
 
@@ -452,7 +477,7 @@ make xc-deploy-nginx
 
 ### Overviewing NGINX Deployment
  
-The vK8s deployment now has additional RE deployments, which contain the newly-configured NGINX proxy. The RE locations included many Points of Presence (PoPs) worldwide, and when selected, it is possible to have our Reverse Proxy service deployed automatically to each of these sites. 
+The vK8s deployment now has additional RE deployments, which contain the newly-configured NGINX proxy. The RE locations include many Points of Presence (PoPs) worldwide, and when selected, it is possible to have our Reverse Proxy service deployed automatically to each of these sites. 
  
 Let's now take a look at the NGINX Deployment. Go back to the **F5 Distributed Cloud Console** and navigate to the **Distributed Apps** service. Proceed to the **Virtual K8s** and click the one we created earlier.
    
@@ -463,13 +488,13 @@ Next, let's look at the pods in the cluster. Click the **Pods** tab to proceed.
   
 ![Dashboard](assets/dash.png)
  
-Here we will drill into the cluster pods: their nodes, statuses, virtual sites they are referenced to and more.  
+Here we will drill down into the cluster pods: their nodes, statuses, virtual sites they are referenced to, and more.  
   
 ![NGINX Pods](assets/nginxpods.png)
 
 ### Creating HTTP Load Balancer
 
-To access our NGINX module that pulls the data from PostgreSQL we need an HTTP Load Balancer. This load balancer needs to be advertised on the internet so that it can be accessed from out of the vK8s cluster. Let's move on and create an HTTP Load Balancer. 
+To access our NGINX module that pulls the data from PostgreSQL, we need an HTTP Load Balancer. This load balancer needs to be advertised on the internet so that it can be accessed from outside of the vK8s cluster. Let's move on and create an HTTP Load Balancer. 
  
 Navigate to **Load Balancers** and select the **HTTP Load Balancers** option. Then click the **Add HTTP Load Balancer** button to open the creation form. 
   
@@ -491,7 +516,7 @@ First, give it a name, then specify the **9080** port and proceed to add **Origi
   
 ![NGINX Pool](assets/nginxpool.png)
  
-First, from the Select Type of Origin Server menu, select **K8s Service Name of Origin Server on given Sites** to specify the origin server with its K8s service name. Then enter the **nginx-rp.ha-services-ce** service name in the Service Name field where *nginx-rp* is the deployed service name and *ha-services-ce* is the namespace. Next, select the **Virtual Site** option in the Site or Virtual Site menu to choose **ves-io-shared/ves-io-all-res** site which includes all regional edge sites across F5 ADN. After that select **vK8s Networks on Site** which means that the origin server is on vK8s network on the site and, finally, click **Apply**. 
+First, from the Select Type of Origin Server menu, select **K8s Service Name of Origin Server on given Sites** to specify the origin server with its K8s service name. Then enter the **nginx-rp.ha-services-ce** service name in the Service Name field where *nginx-rp* is the deployed service name and *ha-services-ce* is the namespace. Next, select the **Virtual Site** option in the Site or Virtual Site menu to choose **ves-io-shared/ves-io-all-res** site which includes all regional edge sites across the F5 ADN. After that, select **vK8s Networks on Site** which means that the origin server is on the vK8s network on the site and, finally, click **Apply**. 
  
 ![Origin Server Setup](assets/originserversetup.png)
  
@@ -509,9 +534,9 @@ Complete creating the load balancer by clicking **Add HTTP Load Balancer**.
 
 ### Testing: Request data from PostgreSQL DB
  
-So, in just a few steps above, the HTTP Load Balancer is set up and can be used to access the reverse Proxy which pulls the data from our PostgreSQL DB backend deployed on the CE. Let's copy the generated **CNAME value** of the created HTTP Load Balancer to test requesting data from the PostgreSQL database.  
+So, in just a few steps above, the HTTP Load Balancer is set up and can be used to access the reverse proxy which pulls the data from our PostgreSQL DB backend deployed on the CE. Let's copy the generated **CNAME value** of the created HTTP Load Balancer to test requesting data from the PostgreSQL database.  
  
-Click on the DNS info and then copy icon. 
+Click on the DNS info and then the copy icon. 
   
 ![CNAME Copy](assets/cnamecopy.png)
  
@@ -527,10 +552,10 @@ Refresh the page and pay attention to the decrease in the loading time.
  
 At this stage you should have successfully deployed a highly-available distributed app architecture with: 
 
-• A PostgreSQL database in an HA configuration in a central location, deployed across multiple vK8s pods that run on several compute nodes running within a Customer Edge Site in Azure VNET;
-• A TCP load balancer that exposes and advertises this workload to other deployments within our topology; 
-• An RE deployment that can run across many geographic regions, and contains an NGINX Reverse Proxy with a module that reads the data from our central database. 
+- A PostgreSQL database in an HA configuration in a central location, deployed across multiple vK8s pods that run on several compute nodes running within a Customer Edge Site in an Azure VNET;
+- A TCP load balancer that exposes and advertises this workload to other deployments within our topology; 
+- An RE deployment that can run across many geographic regions, and contains an NGINX Reverse Proxy with a module that reads the data from our central database. 
 
-Such configuration could be used as a reference architecture for deploying a centralized database or backend service by way of Helm Charts running in Kubernetes, which can be connected to REs containing customer-facing apps & services closer to the users' region. These services can all be deployed and managed via F5 Distributed Cloud Console for faster time-to-value and more control. Of course, any of these services can also be secured with Web Application and API Protection solutions as well, further improving the reliability and robustness of the resulting architecture.  
+Such a configuration could be used as a reference architecture for deploying a centralized database or backend service by way of Helm Charts running in Kubernetes, which can be connected to REs containing customer-facing apps & services closer to the users' region. These services can all be deployed and managed via the F5 Distributed Cloud Console for faster time-to-value and more control. Of course, any of these services can also be secured with Web Application and API Protection solutions as well, further improving the reliability and robustness of the resulting architecture.  
  
 We hope you now have a better understanding of F5 Distributed Cloud Services that provide virtual Kubernetes (vK8s) capabilities to simplify the deployment and management of distributed workloads across multiple clouds and regions and are now ready to implement them for your own organization. Should you have any issues or questions, please feel free to raise them via GitHub. Thank you!

@@ -16,7 +16,7 @@ postgresql-ha:
   postgresql:
     image:
       registry: ghcr.io
-      repository: f5shemyakin/xchaazdemoguide/postgresql-repmgr
+      repository: f5devcentral/xchaazdemoguide/postgresql-repmgr
       tag: 17.6.0-debian-12-r2
     networkPolicy:
       enabled: false
@@ -48,7 +48,7 @@ postgresql-ha:
       create: false
     image:
       registry: ghcr.io
-      repository: f5shemyakin/xchaazdemoguide/pgpool
+      repository: f5devcentral/xchaazdemoguide/pgpool
       tag: 4.6.3-debian-12-r0
     
     adminUsername: haservices

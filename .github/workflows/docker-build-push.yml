@@ -140,3 +140,56 @@ jobs:
         echo "- pgpool" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "Images are available at: ghcr.io/${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+
+  cleanup-untagged:
+    needs: [build-and-push, copy-bitnami-images]
+    runs-on: ubuntu-latest
+    if: always()
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - name: Delete untagged container images
+      uses: actions/delete-package-versions@v5
+      with:
+        package-name: '${{ github.event.repository.name }}/migrate-nonroot'
+        package-type: 'container'
+        min-versions-to-keep: 1
+        delete-only-untagged-versions: true
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Delete untagged openresty-base images
+      uses: actions/delete-package-versions@v5
+      with:
+        package-name: '${{ github.event.repository.name }}/openresty-base'
+        package-type: 'container'
+        min-versions-to-keep: 1
+        delete-only-untagged-versions: true
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Delete untagged openresty-nonroot images
+      uses: actions/delete-package-versions@v5
+      with:
+        package-name: '${{ github.event.repository.name }}/openresty-nonroot'
+        package-type: 'container'
+        min-versions-to-keep: 1
+        delete-only-untagged-versions: true
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Delete untagged postgresql-repmgr images
+      uses: actions/delete-package-versions@v5
+      with:
+        package-name: '${{ github.event.repository.name }}/postgresql-repmgr'
+        package-type: 'container'
+        min-versions-to-keep: 1
+        delete-only-untagged-versions: true
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Delete untagged pgpool images
+      uses: actions/delete-package-versions@v5
+      with:
+        package-name: '${{ github.event.repository.name }}/pgpool'
+        package-type: 'container'
+        min-versions-to-keep: 1
+        delete-only-untagged-versions: true
+        token: ${{ secrets.GITHUB_TOKEN }}
