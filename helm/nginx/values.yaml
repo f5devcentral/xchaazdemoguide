@@ -9,7 +9,7 @@ securityContext:
 nginx:
   name: "nginx-rp"
   image:
-    repository: ghcr.io/f5shemyakin/xchaawsdemoguide/openresty-nonroot
+    repository: ghcr.io/f5shemyakin/xchaazdemoguide/openresty-nonroot
     tag: latest
   podSecurityContext: 
     runAsNonRoot: true    
@@ -34,7 +34,7 @@ migration:
   name: haservicesdb
   migration_path: "/migrations"
   image:
-    repository: ghcr.io/f5shemyakin/xchaawsdemoguide/migrate-nonroot
+    repository: ghcr.io/f5shemyakin/xchaazdemoguide/migrate-nonroot
     tag: latest
   resources:
       requests:

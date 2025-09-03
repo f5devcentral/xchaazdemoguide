@@ -12,10 +12,6 @@ resource "helm_release" "nginx" {
     {
       name  = "nginx.podAnnotations.ves\\.io\\/virtual-sites"
       value = "${data.volterra_namespace.hace.name}/${var.virtual_site_name_vk8s}"
-    },
-    {
-      name  = "imagePullSecret.name"
-      value = "registry-secret"
     }
   ]
 }

@@ -98,12 +98,12 @@ jobs:
     strategy:
       matrix:
         include:
-          - source-image: bitnamilegacy/postgresql-repmgr:15.1.0-debian-11-r0
+          - source-image: bitnamilegacy/postgresql-repmgr:17.6.0-debian-12-r2
             target-name: postgresql-repmgr
-            target-tag: 15.1.0-debian-11-r0
-          - source-image: bitnamilegacy/pgpool:4.3.3-debian-11-r28
+            target-tag: 17.6.0-debian-12-r2
+          - source-image: bitnamilegacy/pgpool:4.6.3-debian-12-r0
             target-name: pgpool
-            target-tag: 4.3.3-debian-11-r28
+            target-tag: 4.6.3-debian-12-r0
 
     steps:
     - name: Log in to Container Registry

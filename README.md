@@ -255,6 +255,15 @@ Before we can proceed to the next step, we will need to update the creds in the 
 5. Indicate your *docker-password* (which can be password or access token).
 
 
+### Making Secrets
+ 
+vK8s need to download docker images from the storage. This might be *docker.io* or any other docker registry your company uses. The docker secrets need to be created from command line using the *kubectl create secret* command. Use the name of the *kubeconfig* file that you downloaded in the previous step. 
+ 
+NOTE: Please note that the created secret will not be seen from Registries UI as this section is used to create Deployments from UI. But Helm script will be used in this demo. 
+
+![Make Secret](assets/makesecret.png)
+
+
 ### Updating DB Deployment Chart Values
  
 Bitnami provides ready charts for HA database deployments. The postgresql-ha chart can be used. The chart install requires setup of the corresponding variables so that the HA cluster can run in the Distributed Cloud Platform environment. The main things to change are: 

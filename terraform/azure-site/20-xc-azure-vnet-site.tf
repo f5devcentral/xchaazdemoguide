@@ -18,7 +18,8 @@ resource "volterra_cloud_credentials" "azure_cred" {
 
   depends_on = [ 
     azuread_service_principal_password.auth,
-    azuread_application.auth
+    azuread_application.auth,
+    azurerm_role_assignment.auth
   ]
 }
 
