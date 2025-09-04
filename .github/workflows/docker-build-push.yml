@@ -36,16 +36,6 @@ jobs:
             context: .
 
     steps:
-    - name: Maximize build space
-      uses: easimon/maximize-build-space@master
-      with:
-        root-reserve-mb: 1024
-        swap-size-mb: 2048
-        remove-dotnet: 'true'
-        remove-android: 'true'
-        remove-haskell: 'true'
-        remove-codeql: 'true'
-
     - name: Checkout repository
       uses: actions/checkout@v4
 
@@ -88,6 +78,8 @@ jobs:
           BUILDKIT_INLINE_CACHE=1
         builder: ${{ steps.buildx.outputs.name }}
         shm-size: 2g
+        provenance: false
+        sbom: false
 
   copy-bitnami-images:
     runs-on: ubuntu-latest
