@@ -2,14 +2,20 @@ resource "helm_release" "nginx" {
   name      = "ha-nginx-reverse-proxy"
   chart     = "${var.helm_path}/nginx"
   wait      = false
-  namespace = "${var.environment}"
+  namespace = "${data.volterra_namespace.hace.name}"
 
   values = [
     "${file("${var.helm_path}/nginx/values.yaml")}"
   ]
 
-  set {
-    name  = "imagePullSecret.name"
-    value = "registry-secret"
-  }
+  set =[
+    {
+      name  = "nginx.podAnnotations.ves\\.io\\/virtual-sites"
+      value = "${data.volterra_namespace.hace.name}/${var.virtual_site_name_vk8s}"
+    }
+  ]
+
+  depends_on = [ 
+    helm_release.postgres
+  ]
 }

@@ -3,11 +3,14 @@ pullPolicy: Always
 securityContext: 
   runAsNonRoot: true
 
-imagePullSecret:
-  name: interestingstorage-secret
+#imagePullSecret:
+#  name: "registry-secret"
 
 nginx:
   name: "nginx-rp"
+  image:
+    repository: ghcr.io/f5devcentral/xchaazdemoguide/openresty-nonroot
+    tag: latest
   podSecurityContext: 
     runAsNonRoot: true    
 
@@ -21,7 +24,7 @@ nginx:
   resources:
       requests:
         memory: 256Mi
-        cpu: 500m
+        cpu: 50m
 
 migration:
   username: haservices
@@ -30,7 +33,10 @@ migration:
   port: "5432"
   name: haservicesdb
   migration_path: "/migrations"
+  image:
+    repository: ghcr.io/f5devcentral/xchaazdemoguide/migrate-nonroot
+    tag: latest
   resources:
       requests:
         memory: 256Mi
-        cpu: 500m
+        cpu: 50m

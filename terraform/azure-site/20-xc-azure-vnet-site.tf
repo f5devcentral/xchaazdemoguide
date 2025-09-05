@@ -6,7 +6,7 @@ resource "volterra_cloud_credentials" "azure_cred" {
   name      = "azure-${var.environment}"
   namespace = "system"
   azure_client_secret {
-    client_id = azuread_application.auth.application_id
+    client_id = azuread_application.auth.client_id
     client_secret {
         clear_secret_info {
             url = "string:///${base64encode(azuread_service_principal_password.auth.value)}"
@@ -18,7 +18,8 @@ resource "volterra_cloud_credentials" "azure_cred" {
 
   depends_on = [ 
     azuread_service_principal_password.auth,
-    azuread_application.auth 
+    azuread_application.auth,
+    azurerm_role_assignment.auth
   ]
 }
 
@@ -114,6 +115,7 @@ resource "volterra_tf_params_action" "action_apply" {
   depends_on = [
     volterra_cloud_credentials.azure_cred,
     volterra_azure_vnet_site.site,
+    azuread_application.auth
   ]
 }
 

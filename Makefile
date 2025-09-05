@@ -1,8 +1,8 @@
 .PHONY: default, secrets, docker-migrate, docker-nginx, docker, xc-deploy-bd, xc-deploy-nginx, deploy, delete
 
-DOCKER_SECRET		   ?= interestingstorage-secret
-DOCKER_REGISTRY 	   ?= interestingstorage
-DOCKER_REPOSITORY_URI  ?= $(DOCKER_REGISTRY)/
+DOCKER_SECRET ?= registry-secret
+DOCKER_REGISTRY ?= ghcr.io/f5devcentral/xchaazdemoguide
+DOCKER_REPOSITORY_URI ?= $(DOCKER_REGISTRY)/
 
 
 secrets:

@@ -19,3 +19,12 @@ resource "kubernetes_secret" "secret" {
     })
   }
 }
+
+
+data "volterra_namespace" "hace" {
+  name = var.environment
+}
+
+locals {
+  cluster_domain = var.cluster_domain != "" ? var.cluster_domain : "azure-${var.environment}.${data.volterra_namespace.hace.tenant_name}.tenant.local"
+}
